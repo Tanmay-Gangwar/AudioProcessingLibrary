@@ -41,7 +41,7 @@ main.cpp consists of
 
 
 Matrix.hpp consists of
-class Matrix{
+class Matrix
     int n => represents number of rows
     int m => represents number of columns
     vector<vector> mat => represents Matrix
@@ -58,20 +58,20 @@ class Matrix{
 
     applyMaxPool => creates a new matrix as a result of max pooling of a given stride on matrix
     applyAvgPool => creates a new matrix as a result of average pooling of a given stride on matrix
-}
 
-    istream &operator>> => Inputs matrix
-    ostream &operator<< => Outputs matrix
+
+istream &operator>> => Inputs matrix
+ostream &operator<< => Outputs matrix
 
 
 Vector.hpp consists of
-class Vector{
+class Vector
     int n => represents number of elements in vector
     vector vec => represents vector
 
     applySoftMax => applies softMax function on elements of vector
     applySigmoid => applies sigmoid function on elements of vector
-}
 
-    istream &operator>> => Inputs vector
-    ostream &operator<< => Outputs vector
+
+istream &operator>> => Inputs vector
+ostream &operator<< => Outputs vector
