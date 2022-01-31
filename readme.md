@@ -60,8 +60,8 @@ class Matrix{
     applyAvgPool => creates a new matrix as a result of average pooling of a given stride on matrix
 }
 
-istream &operator>> => Inputs matrix
-ostream &operator<< => Outputs matrix
+    istream &operator>> => Inputs matrix
+    ostream &operator<< => Outputs matrix
 
 
 Vector.hpp consists of
@@ -73,5 +73,5 @@ class Vector{
     applySigmoid => applies sigmoid function on elements of vector
 }
 
-istream &operator>> => Inputs vector
-ostream &operator<< => Outputs vector
+    istream &operator>> => Inputs vector
+    ostream &operator<< => Outputs vector
