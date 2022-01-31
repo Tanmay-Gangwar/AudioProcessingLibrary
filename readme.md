@@ -68,6 +68,7 @@ class Matrix
 
 Vector.hpp consists of
 class Vector
+
     int n => represents number of elements in vector
     vector vec => represents vector
 
