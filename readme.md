@@ -1,4 +1,5 @@
 main.cpp consists of 
+
     void throwInvalidFileError(std::string fileName)
         throws file does not exist exception
 
@@ -42,6 +43,7 @@ main.cpp consists of
 
 Matrix.hpp consists of
 class Matrix
+
     int n => represents number of rows
     int m => represents number of columns
     vector<vector> mat => represents Matrix
@@ -60,8 +62,8 @@ class Matrix
     applyAvgPool => creates a new matrix as a result of average pooling of a given stride on matrix
 
 
-istream &operator>> => Inputs matrix
-ostream &operator<< => Outputs matrix
+    istream &operator>> => Inputs matrix
+    ostream &operator<< => Outputs matrix
 
 
 Vector.hpp consists of
@@ -73,5 +75,5 @@ class Vector
     applySigmoid => applies sigmoid function on elements of vector
 
 
-istream &operator>> => Inputs vector
-ostream &operator<< => Outputs vector
+    istream &operator>> => Inputs vector
+    ostream &operator<< => Outputs vector
