@@ -3,6 +3,25 @@
 
 #include<vector>
 #include<cmath>
+#include<mkl/mkl.h>
+#include<pthread.h>
+
+// Pthread only allowes to pass one argument of type void* therefore creating structure to pass it as argument for pthread
+template<class __num>
+struct pthreadArgs{
+    std::vector<std::vector<__num>> *A, *B, *C;
+    int threadDepth;
+    pthreadArgs(std::vector<std::vector<__num>> *A, std::vector<std::vector<__num>> *B, std::vector<std::vector<__num>> *C, int threadDepth){
+        this->A = A;
+        this->B = B;
+        this->C = C;
+        this->threadDepth = threadDepth;
+    }
+    pthreadArgs(){}
+};
+
+template<class __num>
+void* pthreadProduct(void* arg);
 
 // Matrix class for n rows and m columns
 template<class __num>
@@ -193,7 +212,154 @@ class Matrix{
         }
         return res;
     }
+
+    // this->mat += Mat1 * Mat2 using mkl library;
+    void addProductMKL(Matrix &Mat1, Matrix &Mat2){
+        // If dimensions don't match then throw error
+        if (Mat1.m != Mat2.n)
+            throw std::invalid_argument("Invalid dimensions of matrices for multiplication.");
+        // If dimensions don't match then throw error
+        if (n != Mat1.n || m != Mat2.m) 
+            throw std::invalid_argument("Invalid dimensions of matrices for addition");
+
+        // create A, B, C pointers for mkl
+        double *A, *B, *C;
+        // C = alpha * A * B + beta * C
+        double alpha = 1.0, beta = 1.0;
+        A = (double*) mkl_malloc(Mat1.n * Mat1.m * sizeof(double), 64);
+        B = (double*) mkl_malloc(Mat2.n * Mat2.m * sizeof(double), 64);
+        C = (double*) mkl_malloc(n * m * sizeof(double), 64);
+
+        // Assign value to A
+        for (int i = 0; i < Mat1.n; i++){
+            for (int j = 0; j < Mat1.m; j++){
+                A[Mat1.m * i + j] = Mat1.mat[i][j];
+            }
+        }
+
+        // Assign values to B
+        for (int i = 0; i < Mat2.n; i++){
+            for (int j = 0; j < Mat2.m; j++){
+                B[Mat2.m * i + j] = Mat2.mat[i][j];
+            }
+        }
+
+        // Assign values to C
+        for (int i = 0; i < n; i++){
+            for (int j = 0; j < m; j++){
+                C[m * i + j] = mat[i][j];
+            }
+        }
+
+        // Calculate C = alpha * A * B + beta * C
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Mat1.n, Mat2.m, Mat1.m, alpha, A, Mat1.m, B, Mat2.m, beta, C, Mat2.m);
+        // Assign values to matrix
+        for (int i = 0; i < n; i++){
+            for (int j = 0; j < m; j++){
+                mat[i][j] = C[m * i + j];
+            }
+        }
+    }
+
+    // Returns product of other and self using threads
+    Matrix productPthread(Matrix &other, int threadDepth){
+        Matrix res(n, other.m);
+        pthreadArgs<__num>* args = new pthreadArgs<__num>(&mat, &other.mat, &res.mat, threadDepth);
+        pthreadProduct<__num>(args);
+        return res;
+    }
 };
+
+// Takes argument in form of pointer to the structure
+template<class __num>
+void* pthreadProduct(void* arg){
+    pthreadArgs<__num>* args = (pthreadArgs<__num>*) arg;
+    int n = args->A->size();
+    int k = args->B->size();
+    int m = args->B->at(0).size();
+    // Perform basic matrix multiplication
+    if (args->threadDepth == 0 || n == 1 || k == 1 || m == 1){
+        args->C->resize(n, std::vector<__num>(m));
+        for (int i = 0; i < n; i++){
+            for (int j = 0; j < m; j++){
+                for (int x = 0; x < k; x++){
+                    args->C->at(i)[j] += args->A->at(i)[x] * args->B->at(x)[j];
+                }
+            }
+        }
+        return NULL;
+    }
+
+    // Divides A into 4 sub-matrices
+    Matrix<__num> A1(n / 2, k / 2), A2(n / 2, (k + 1) / 2), A3((n + 1) / 2, k / 2), A4((n + 1) / 2, (k + 1) / 2);
+    for (int i = 0; i < n; i++){
+        for (int j = 0; j < k; j++){
+            if (i < n / 2){
+                if (j < k / 2) A1.mat[i][j] = args->A->at(i)[j];
+                else A2.mat[i][j - k / 2] = args->A->at(i)[j];
+            }
+            else{
+                if (j < k / 2) A3.mat[i - n / 2][j] = args->A->at(i)[j];
+                else A4.mat[i - n / 2][j - k / 2] = args->A->at(i)[j];
+            }
+        }
+    }
+
+    // Divides B into 4 sub-matrices
+    Matrix<__num> B1(k / 2, m / 2), B2(k / 2, (m + 1) / 2), B3((k + 1) / 2, m / 2), B4((k + 1) / 2, (m + 1) / 2);
+    for (int i = 0; i < k; i++){
+        for (int j = 0; j < m; j++){
+            if (i < k / 2){
+                if (j < m / 2) B1.mat[i][j] = args->B->at(i)[j];
+                else B2.mat[i][j - m / 2] = args->B->at(i)[j];
+            }
+            else{
+                if (j < m / 2) B3.mat[i - k / 2][j] = args->B->at(i)[j];
+                else B4.mat[i - k / 2][j - m / 2] = args->B->at(i)[j];
+            }
+        }
+    }
+
+    // Divides C as products of 4 sub-matrices of A and B
+    Matrix<__num> C11, C12, C21, C22, C31, C32, C41, C42;
+    pthreadArgs<__num>* threadArgs[8];
+    threadArgs[0] = new pthreadArgs<__num>(&A1.mat, &B1.mat, &C11.mat, args->threadDepth - 1);
+    threadArgs[1] = new pthreadArgs<__num>(&A2.mat, &B3.mat, &C12.mat, args->threadDepth - 1);
+    threadArgs[2] = new pthreadArgs<__num>(&A1.mat, &B2.mat, &C21.mat, args->threadDepth - 1);
+    threadArgs[3] = new pthreadArgs<__num>(&A2.mat, &B4.mat, &C22.mat, args->threadDepth - 1);
+    threadArgs[4] = new pthreadArgs<__num>(&A3.mat, &B1.mat, &C31.mat, args->threadDepth - 1);
+    threadArgs[5] = new pthreadArgs<__num>(&A4.mat, &B3.mat, &C32.mat, args->threadDepth - 1);
+    threadArgs[6] = new pthreadArgs<__num>(&A3.mat, &B2.mat, &C41.mat, args->threadDepth - 1);
+    threadArgs[7] = new pthreadArgs<__num>(&A4.mat, &B4.mat, &C42.mat, args->threadDepth - 1);
+
+    // create threads
+    pthread_t thread[8];
+    for (int i = 0; i < 8; i++){
+        pthread_create(&thread[i], NULL, pthreadProduct<__num>, threadArgs[i]);
+    }
+
+    // wait till all the threads are completed
+    for (int i = 0; i < 8; i++){
+        pthread_join(thread[i], NULL);
+    }
+
+    // Combines C11 to C42 to form result C
+    args->C->resize(n, std::vector<__num>(m));
+    for (int i = 0; i < n; i++){
+        for (int j = 0; j < m; j++){
+            if (i < n / 2){
+                if (j < m / 2) args->C->at(i)[j] = C11.mat[i][j] + C12.mat[i][j];
+                else args->C->at(i)[j] = C21.mat[i][j - m / 2] + C22.mat[i][j - m / 2];
+            }
+            else{
+                if (j < m / 2) args->C->at(i)[j] = C31.mat[i - n / 2][j] + C32.mat[i - n / 2][j];
+                else args->C->at(i)[j] = C41.mat[i - n / 2][j - m / 2] + C42.mat[i - n / 2][j - m / 2];
+            }
+        }
+    }
+
+    return NULL;
+}
 
 
 // Input Matrix columnwise

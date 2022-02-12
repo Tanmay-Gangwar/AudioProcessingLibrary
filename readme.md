@@ -4,11 +4,12 @@ main.cpp consists of
         throws file does not exist exception
 
 
-    void processFullyConnected(char *inputMatrixFile, char *weightMatrixFile, char *biasMatrixFile, char *outputMatrixFile)
+    void processFullyConnected(char *inputMatrixFile, char *weightMatrixFile, char *biasMatrixFile, char *outputMatrixFile, std::string library)
         inputs inputMatrix, weightMatrix, biasMatrix
         outputMatrix = inputMatrix * weightMatrix + biasMatrix
         outputs outputMatrix
-    [TERMINAL COMMAND:] ./yourcode.out fullyconnected inputmatrix.txt weightmatrix.txt biasmatrix.txt outputmatrix.txt
+    [TERMINAL COMMAND:] ./yourcode.out fullyconnected inputmatrix.txt weightmatrix.txt biasmatrix.txt outputmatrix.txt [LIBRARY]
+    [LIBRARY] = pthread / normal / mkl / openblas
 
 
     void processActivation(std::string activationType, char *inputMatrixFile, char *outputMatrixFile)
@@ -78,3 +79,10 @@ class Vector
 
     istream &operator>> => Inputs vector
     ostream &operator<< => Outputs vector
+
+How to install mkl library in linux
+    sudo apt-get update
+    sudo apt-get install intel-mkl-full
+
+For compilation
+    g++ -fopenmp 2020CS10399.cpp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -o yourcode.out

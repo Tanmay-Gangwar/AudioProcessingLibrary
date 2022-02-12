@@ -8,8 +8,85 @@ void throwInvalidFileError(std::string fileName){
     throw std::invalid_argument(error);
 }
 
+void processFullyConnectedPthread(char *inputMatrixFile, char *weightMatrixFile, char *biasMatrixFile, char *outputMatrixFile){
+    int n, m;
+    FILE *file = freopen(inputMatrixFile, "r", stdin);
+    if (!file) throwInvalidFileError(inputMatrixFile);
+    // Input inputMatrix
+    std::cin >> m >> n;
+    Matrix<float> inputMatrix(n, m);
+    std::cin >> inputMatrix;
+    fclose(stdin);
 
-void processFullyConnected(char *inputMatrixFile, char *weightMatrixFile, char *biasMatrixFile, char *outputMatrixFile){
+    file = freopen(weightMatrixFile, "r", stdin);
+    if (!file) throwInvalidFileError(weightMatrixFile);
+    // Input weight matrix
+    std::cin >> m >> n;
+    Matrix<float> weightMatrix(n, m);
+    std::cin >> weightMatrix;
+    fclose(stdin);
+
+    file = freopen(biasMatrixFile, "r", stdin);
+    if (!file) throwInvalidFileError(biasMatrixFile);
+    // Input biasMatrix
+    std::cin >> m >> n;
+    Matrix<float> biasMatrix(n, m);
+    std::cin >> biasMatrix;
+    fclose(stdin);
+
+    // outputMatrix = inputMatrix * weightMatrix + biasMatrix
+    Matrix<float> outputMatrix = inputMatrix.productPthread(weightMatrix, 5);
+    outputMatrix += biasMatrix;
+    m = outputMatrix.m;
+    n = outputMatrix.n;
+
+    // Output outputMatrix
+    freopen(outputMatrixFile, "w", stdout);
+    std::cout << m << "\n" << n << "\n";
+    std::cout << outputMatrix;
+    fclose(stdout);
+}
+
+void processFullyConnectedMKL(char *inputMatrixFile, char *weightMatrixFile, char *biasMatrixFile, char *outputMatrixFile){
+    int n, m;
+    FILE *file = freopen(inputMatrixFile, "r", stdin);
+    if (!file) throwInvalidFileError(inputMatrixFile);
+    // Input inputMatrix
+    std::cin >> m >> n;
+    Matrix<float> inputMatrix(n, m);
+    std::cin >> inputMatrix;
+    fclose(stdin);
+
+    file = freopen(weightMatrixFile, "r", stdin);
+    if (!file) throwInvalidFileError(weightMatrixFile);
+    // Input weight matrix
+    std::cin >> m >> n;
+    Matrix<float> weightMatrix(n, m);
+    std::cin >> weightMatrix;
+    fclose(stdin);
+
+    file = freopen(biasMatrixFile, "r", stdin);
+    if (!file) throwInvalidFileError(biasMatrixFile);
+    // Input biasMatrix
+    std::cin >> m >> n;
+    Matrix<float> biasMatrix(n, m);
+    std::cin >> biasMatrix;
+    fclose(stdin);
+
+    // biasMatrix += inputMatrix * weightMatrix
+    biasMatrix.addProductMKL(inputMatrix, weightMatrix);
+    m = biasMatrix.m;
+    n = biasMatrix.n;
+
+    // Output updated biasMatrix as it is the final result
+    freopen(outputMatrixFile, "w", stdout);
+    std::cout << m << "\n" << n << "\n";
+    std::cout << biasMatrix;
+    fclose(stdout);
+}
+
+
+void processFullyConnectedNormal(char *inputMatrixFile, char *weightMatrixFile, char *biasMatrixFile, char *outputMatrixFile){
     int n, m;
     FILE *file = freopen(inputMatrixFile, "r", stdin);
     if (!file) throwInvalidFileError(inputMatrixFile);
@@ -46,6 +123,15 @@ void processFullyConnected(char *inputMatrixFile, char *weightMatrixFile, char *
     std::cout << m << "\n" << n << "\n";
     std::cout << outputMatrix;
     fclose(stdout);
+}
+
+// Process library type and redirect to valid processFullyConnected
+void processFullyConnected(char *inputMatrixFile, char *weightMatrixFile, char *biasMatrixFile, char *outputMatrixFile, std::string library){
+    if (library == "mkl") processFullyConnectedMKL(inputMatrixFile, weightMatrixFile, biasMatrixFile, outputMatrixFile);
+    // else if (library == "openblas") processFullyConnectedOpenBlas(inputMatrixFile, weightMatrixFile, biasMatrixFile, outputMatrixFile);
+    else if (library == "pthread") processFullyConnectedPthread(inputMatrixFile, weightMatrixFile, biasMatrixFile, outputMatrixFile);
+    else if (library == "normal") processFullyConnectedNormal(inputMatrixFile, weightMatrixFile, biasMatrixFile, outputMatrixFile);
+    else throw std::invalid_argument("FOR HELP TYPE \n ./yourcode.out help");
 }
 
 
@@ -125,7 +211,8 @@ void processProbability(std::string probabilityType, char *inputVectorFile, char
 void help(){
     std::cout << "Valid inputs:\n";
     std::cout << "To run fullyConnected function on matrix:\n";
-    std::cout << "./yourcode.out fullyconnected inputmmatrix.txt weightmatrix.txt biasmatrix.txt outputmatrix.txt\n";
+    std::cout << "./yourcode.out fullyconnected inputmmatrix.txt weightmatrix.txt biasmatrix.txt outputmatrix.txt [LIBRARY]\n";
+    std::cout << "[LIBRARY] = mkl / openblas / pthread / normal\n";
     std::cout << "To run activation function on matrix:\n";
     std::cout << "./yourcode.out activation [ACTIVATION TYPE] inputmatrix.txt outputmatrix.txt\n";
     std::cout << "[ACTIVATION TYPE] = relu / tanh\n";
@@ -145,7 +232,7 @@ int main(int argCount, char **args){
 
     if (argCount == 0) throw std::invalid_argument("FOR HELP TYPE \n ./yourcode.out help");
     std::string s = args[1];
-    if (s == "fullyconnected" && argCount == 6) processFullyConnected(args[2], args[3], args[4], args[5]);
+    if (s == "fullyconnected" && argCount == 7) processFullyConnected(args[2], args[3], args[4], args[5], args[6]);
     else if (s == "activation" && argCount == 5) processActivation(args[2], args[3], args[4]);
     else if (s == "pooling" && argCount == 6) processPooling(args[2], args[3], args[4], args[5]);
     else if (s == "probability" && argCount == 5) processProbability(args[2], args[3], args[4]);
