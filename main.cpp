@@ -1,6 +1,8 @@
 #include<iostream>
 #include"Vector.hpp"
 #include"Matrix.hpp"
+#include"MKL.hpp"
+#include"OpenBlas.hpp"
 
 // If file does not exist throw error that file doesn't exist
 void throwInvalidFileError(std::string fileName){
@@ -8,129 +10,86 @@ void throwInvalidFileError(std::string fileName){
     throw std::invalid_argument(error);
 }
 
-void processFullyConnectedPthread(char *inputMatrixFile, char *weightMatrixFile, char *biasMatrixFile, char *outputMatrixFile){
-    int n, m;
-    FILE *file = freopen(inputMatrixFile, "r", stdin);
-    if (!file) throwInvalidFileError(inputMatrixFile);
-    // Input inputMatrix
-    std::cin >> m >> n;
-    Matrix<float> inputMatrix(n, m);
-    std::cin >> inputMatrix;
-    fclose(stdin);
-
-    file = freopen(weightMatrixFile, "r", stdin);
-    if (!file) throwInvalidFileError(weightMatrixFile);
-    // Input weight matrix
-    std::cin >> m >> n;
-    Matrix<float> weightMatrix(n, m);
-    std::cin >> weightMatrix;
-    fclose(stdin);
-
-    file = freopen(biasMatrixFile, "r", stdin);
-    if (!file) throwInvalidFileError(biasMatrixFile);
-    // Input biasMatrix
-    std::cin >> m >> n;
-    Matrix<float> biasMatrix(n, m);
-    std::cin >> biasMatrix;
-    fclose(stdin);
-
+void processFullyConnectedPthread(Matrix<float> &inputMatrix, Matrix<float> &weightMatrix, Matrix<float> &biasMatrix, char *outputMatrixFile){
     // outputMatrix = inputMatrix * weightMatrix + biasMatrix
     Matrix<float> outputMatrix = inputMatrix.productPthread(weightMatrix, 5);
     outputMatrix += biasMatrix;
-    m = outputMatrix.m;
-    n = outputMatrix.n;
 
     // Output outputMatrix
     freopen(outputMatrixFile, "w", stdout);
-    std::cout << m << "\n" << n << "\n";
+    std::cout << outputMatrix.m << "\n" << outputMatrix.n << "\n";
     std::cout << outputMatrix;
     fclose(stdout);
 }
 
-void processFullyConnectedMKL(char *inputMatrixFile, char *weightMatrixFile, char *biasMatrixFile, char *outputMatrixFile){
-    int n, m;
-    FILE *file = freopen(inputMatrixFile, "r", stdin);
-    if (!file) throwInvalidFileError(inputMatrixFile);
-    // Input inputMatrix
-    std::cin >> m >> n;
-    Matrix<float> inputMatrix(n, m);
-    std::cin >> inputMatrix;
-    fclose(stdin);
 
-    file = freopen(weightMatrixFile, "r", stdin);
-    if (!file) throwInvalidFileError(weightMatrixFile);
-    // Input weight matrix
-    std::cin >> m >> n;
-    Matrix<float> weightMatrix(n, m);
-    std::cin >> weightMatrix;
-    fclose(stdin);
-
-    file = freopen(biasMatrixFile, "r", stdin);
-    if (!file) throwInvalidFileError(biasMatrixFile);
-    // Input biasMatrix
-    std::cin >> m >> n;
-    Matrix<float> biasMatrix(n, m);
-    std::cin >> biasMatrix;
-    fclose(stdin);
-
+void processFullyConnectedMKL(Matrix<float> &inputMatrix, Matrix<float> &weightMatrix, Matrix<float> &biasMatrix, char *outputMatrixFile){
     // biasMatrix += inputMatrix * weightMatrix
-    biasMatrix.addProductMKL(inputMatrix, weightMatrix);
-    m = biasMatrix.m;
-    n = biasMatrix.n;
+    addProductMKL(inputMatrix, weightMatrix, biasMatrix);
 
     // Output updated biasMatrix as it is the final result
     freopen(outputMatrixFile, "w", stdout);
-    std::cout << m << "\n" << n << "\n";
+    std::cout << biasMatrix.m << "\n" << biasMatrix.n << "\n";
     std::cout << biasMatrix;
     fclose(stdout);
 }
 
 
-void processFullyConnectedNormal(char *inputMatrixFile, char *weightMatrixFile, char *biasMatrixFile, char *outputMatrixFile){
-    int n, m;
-    FILE *file = freopen(inputMatrixFile, "r", stdin);
-    if (!file) throwInvalidFileError(inputMatrixFile);
-    // Input inputMatrix
-    std::cin >> m >> n;
-    Matrix<float> inputMatrix(n, m);
-    std::cin >> inputMatrix;
-    fclose(stdin);
+void processFullyConnectedOpenBlas(Matrix<float> &inputMatrix, Matrix<float> &weightMatrix, Matrix<float> &biasMatrix, char *outputMatrixFile){
+    // biasMatrix += inputMatrix * weightMatrix
+    addProductOpenBlas(inputMatrix, weightMatrix, biasMatrix);
 
-    file = freopen(weightMatrixFile, "r", stdin);
-    if (!file) throwInvalidFileError(weightMatrixFile);
-    // Input weight matrix
-    std::cin >> m >> n;
-    Matrix<float> weightMatrix(n, m);
-    std::cin >> weightMatrix;
-    fclose(stdin);
+    // Output updated biasMatrix as it is the final result
+    freopen(outputMatrixFile, "w", stdout);
+    std::cout << biasMatrix.m << "\n" << biasMatrix.n << "\n";
+    std::cout << biasMatrix;
+    fclose(stdout);
+}
 
-    file = freopen(biasMatrixFile, "r", stdin);
-    if (!file) throwInvalidFileError(biasMatrixFile);
-    // Input biasMatrix
-    std::cin >> m >> n;
-    Matrix<float> biasMatrix(n, m);
-    std::cin >> biasMatrix;
-    fclose(stdin);
 
+void processFullyConnectedNormal(Matrix<float> &inputMatrix, Matrix<float> &weightMatrix, Matrix<float> &biasMatrix, char *outputMatrixFile){
     // outputMatrix = inputMatrix * weightMatrix + biasMatrix
     Matrix<float> outputMatrix = inputMatrix * weightMatrix;
     outputMatrix += biasMatrix;
-    m = outputMatrix.m;
-    n = outputMatrix.n;
 
     // Output outputMatrix
     freopen(outputMatrixFile, "w", stdout);
-    std::cout << m << "\n" << n << "\n";
+    std::cout << outputMatrix.m << "\n" << outputMatrix.n << "\n";
     std::cout << outputMatrix;
     fclose(stdout);
 }
 
 // Process library type and redirect to valid processFullyConnected
 void processFullyConnected(char *inputMatrixFile, char *weightMatrixFile, char *biasMatrixFile, char *outputMatrixFile, std::string library){
-    if (library == "mkl") processFullyConnectedMKL(inputMatrixFile, weightMatrixFile, biasMatrixFile, outputMatrixFile);
-    // else if (library == "openblas") processFullyConnectedOpenBlas(inputMatrixFile, weightMatrixFile, biasMatrixFile, outputMatrixFile);
-    else if (library == "pthread") processFullyConnectedPthread(inputMatrixFile, weightMatrixFile, biasMatrixFile, outputMatrixFile);
-    else if (library == "normal") processFullyConnectedNormal(inputMatrixFile, weightMatrixFile, biasMatrixFile, outputMatrixFile);
+    int n, m;
+    FILE *file = freopen(inputMatrixFile, "r", stdin);
+    if (!file) throwInvalidFileError(inputMatrixFile);
+    // Input inputMatrix
+    std::cin >> m >> n;
+    Matrix<float> inputMatrix(n, m);
+    std::cin >> inputMatrix;
+    fclose(stdin);
+
+    file = freopen(weightMatrixFile, "r", stdin);
+    if (!file) throwInvalidFileError(weightMatrixFile);
+    // Input weight matrix
+    std::cin >> m >> n;
+    Matrix<float> weightMatrix(n, m);
+    std::cin >> weightMatrix;
+    fclose(stdin);
+
+    file = freopen(biasMatrixFile, "r", stdin);
+    if (!file) throwInvalidFileError(biasMatrixFile);
+    // Input biasMatrix
+    std::cin >> m >> n;
+    Matrix<float> biasMatrix(n, m);
+    std::cin >> biasMatrix;
+    fclose(stdin);
+
+    if (library == "mkl") processFullyConnectedMKL(inputMatrix, weightMatrix, biasMatrix, outputMatrixFile);
+    else if (library == "openblas") processFullyConnectedOpenBlas(inputMatrix, weightMatrix, biasMatrix, outputMatrixFile);
+    else if (library == "pthread") processFullyConnectedPthread(inputMatrix, weightMatrix, biasMatrix, outputMatrixFile);
+    else if (library == "normal") processFullyConnectedNormal(inputMatrix, weightMatrix, biasMatrix, outputMatrixFile);
     else throw std::invalid_argument("FOR HELP TYPE \n ./yourcode.out help");
 }
 
