@@ -62,6 +62,12 @@ class Matrix
     applyMaxPool => creates a new matrix as a result of max pooling of a given stride on matrix
     applyAvgPool => creates a new matrix as a result of average pooling of a given stride on matrix
 
+    productPthread => calls pthreadProduct with its respective argument
+    pthreadProduct => 
+    if threadDepth == 0:
+        It only do normal matrix multiplication
+    else:
+        It breaks martices into 4 sub matrices and call itself recursively till threadDepth > 0. Finally it merges submatrices into one.
 
     istream &operator>> => Inputs matrix
     ostream &operator<< => Outputs matrix
@@ -80,12 +86,49 @@ class Vector
     istream &operator>> => Inputs vector
     ostream &operator<< => Outputs vector
 
-How to install mkl library in linux
+MKL.hpp and OpenBlas.hpp both consists of
+
+    addProduct function for Mat3 += Mat1 * Mat2 using cblas_degmm function.
+
+measure.cpp
+
+    to_run vector takes input the sizes of test cases to run mkl, openblas and pthread library functions implemented in main.cpp
+    For every size input, it generates a matrix filled with random floats in range [-10.0, 10.0].
+    Then it performs matrix multiplication 10 times and calculates mean and standard deviation of the run times for all libraries.
+    All these data set formed are saved as 
+        normalData.txt for no library used
+        pthreadData.txt for using threading
+        mklData.txt for using MKL library
+        openBlasData.txt for using Openblas library
+    these data set consist of n (to_run.size()) rows and 4 columns
+        1st column represent size of matrix it ran on
+        2nd column represent average time taken for multiplication
+        3rd column represent average error in times
+        4th column represent standard deviation for the corresponding time
+
+
+How to install mkl library in linux (ubuntu)
 
     sudo apt-get update
     sudo apt-get install intel-mkl-full
+
+
+How to install openblas library in linux (ubuntu)
+
+    sudo apt-get update
     sudo apt-get install libopenblas-dev
+
 
 For compilation
 
-    g++ -fopenmp 2020CS10399.cpp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lopenblas -lpthread -o yourcode.out
+    g++ -fopenmp main.cpp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lopenblas -lpthread -o yourcode.out
+
+
+GNUPlotScript.p consists of
+
+    gnuplotscript commands to plot graph of time-taken to run for different matrix size in case of no library used, pthread, mkl and openblas library used.
+    
+
+script.sh consists of
+
+    command to run measure.cpp and create new gnuplot
