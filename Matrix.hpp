@@ -1,9 +1,8 @@
-#ifndef MATRIX_HPP
-#define MATRIX_HPP
+#ifndef MATRIX_HPP_BY_TANMAY
+#define MATRIX_HPP_BY_TANMAY
 
 #include<vector>
 #include<cmath>
-#include<mkl/mkl.h>
 #include<pthread.h>
 
 // Pthread only allowes to pass one argument of type void* therefore creating structure to pass it as argument for pthread
@@ -211,54 +210,6 @@ class Matrix{
             }
         }
         return res;
-    }
-
-    // this->mat += Mat1 * Mat2 using mkl library;
-    void addProductMKL(Matrix &Mat1, Matrix &Mat2){
-        // If dimensions don't match then throw error
-        if (Mat1.m != Mat2.n)
-            throw std::invalid_argument("Invalid dimensions of matrices for multiplication.");
-        // If dimensions don't match then throw error
-        if (n != Mat1.n || m != Mat2.m) 
-            throw std::invalid_argument("Invalid dimensions of matrices for addition");
-
-        // create A, B, C pointers for mkl
-        double *A, *B, *C;
-        // C = alpha * A * B + beta * C
-        double alpha = 1.0, beta = 1.0;
-        A = (double*) mkl_malloc(Mat1.n * Mat1.m * sizeof(double), 64);
-        B = (double*) mkl_malloc(Mat2.n * Mat2.m * sizeof(double), 64);
-        C = (double*) mkl_malloc(n * m * sizeof(double), 64);
-
-        // Assign value to A
-        for (int i = 0; i < Mat1.n; i++){
-            for (int j = 0; j < Mat1.m; j++){
-                A[Mat1.m * i + j] = Mat1.mat[i][j];
-            }
-        }
-
-        // Assign values to B
-        for (int i = 0; i < Mat2.n; i++){
-            for (int j = 0; j < Mat2.m; j++){
-                B[Mat2.m * i + j] = Mat2.mat[i][j];
-            }
-        }
-
-        // Assign values to C
-        for (int i = 0; i < n; i++){
-            for (int j = 0; j < m; j++){
-                C[m * i + j] = mat[i][j];
-            }
-        }
-
-        // Calculate C = alpha * A * B + beta * C
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Mat1.n, Mat2.m, Mat1.m, alpha, A, Mat1.m, B, Mat2.m, beta, C, Mat2.m);
-        // Assign values to matrix
-        for (int i = 0; i < n; i++){
-            for (int j = 0; j < m; j++){
-                mat[i][j] = C[m * i + j];
-            }
-        }
     }
 
     // Returns product of other and self using threads

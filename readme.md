@@ -81,8 +81,11 @@ class Vector
     ostream &operator<< => Outputs vector
 
 How to install mkl library in linux
+
     sudo apt-get update
     sudo apt-get install intel-mkl-full
+    sudo apt-get install libopenblas-dev
 
 For compilation
-    g++ -fopenmp 2020CS10399.cpp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -o yourcode.out
+
+    g++ -fopenmp 2020CS10399.cpp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lopenblas -lpthread -o yourcode.out
