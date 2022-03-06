@@ -1,5 +1,5 @@
-#ifndef VECTOR_HPP
-#define VECTOR_HPP
+#ifndef VECTOR_HPP_BY_TANMAY_SARTHAK
+#define VECTOR_HPP_BY_TANMAY_SARTHAK
 
 #include<vector>
 #include<cmath>
