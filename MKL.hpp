@@ -1,5 +1,5 @@
-#ifndef MKL_HPP_BY_TANMAY
-#define MKL_HPP_BY_TANMAY
+#ifndef MKL_HPP_BY_TANMAY_SARTHAK
+#define MKL_HPP_BY_TANMAY_SARTHAK
 
 #include"Matrix.hpp"
 #include<mkl/mkl.h>

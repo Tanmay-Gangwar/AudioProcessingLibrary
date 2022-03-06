@@ -1,5 +1,5 @@
-#ifndef MATRIX_HPP_BY_TANMAY
-#define MATRIX_HPP_BY_TANMAY
+#ifndef MATRIX_HPP_BY_TANMAY_SARTHAK
+#define MATRIX_HPP_BY_TANMAY_SARTHAK
 
 #include<vector>
 #include<cmath>
